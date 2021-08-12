@@ -1,0 +1,58 @@
+---
+title: "Sentiment Analysis"
+author: "Soumya Paul"
+date: "29/07/2021"
+output: pdf_document
+---
+# Tokyo Olympics 2021(2020) tweets
+Monitoring tweets on Olympics -Updated at least once daily.
+
+* Search queries are - 'Olympics'
+* collected using tweepy Python and Twitter API
+
+# Last updated - 29th July,2021
+Number of tweets - 140,000+
+
+```{r}
+library(readxl)
+Olympics_Tokyo_tweets <- read_excel("/Users/soumyapaul/Dropbox/R works/Projects/Olympics_Tokyo_tweets.xlsx")
+library(twitteR)
+library(purrr)
+library(dplyr)
+require("ROAuth")
+require("RCurl")
+library(plyr)
+library(stringr)
+library(ggplot2)
+#Sentiment function
+score.sentiment=function(sentences,pos.words,neg.words,.progress="none")
+{
+  require(plyr)
+  require(stringr)
+  scores=laply(sentences, function(sentence,pos.words,neg.words){
+    sentence=gsub('[[:punct:]]','',sentence)
+    sentence=gsub('[[:cntrl:]]','',sentence)
+    sentence=gsub('\\d+','',sentence)
+    sentence=tolower(sentence)
+    word.list=strsplit(sentence,'\\s+')
+    words=unlist(word.list)
+    pos.matches=match(words,pos.words)
+    neg.matches=match(words,neg.words)
+    pos.matches=!is.na(pos.matches)
+    neg.matches=!is.na(neg.matches)
+    score=sum(pos.matches)-sum(neg.matches)
+    return(score)
+  },pos.words,neg.words,.progress= .progress)
+  scores.df=data_frame(score=scores,text=sentences)
+  return(scores.df)
+}
+  pos.words=scan('/Users/soumyapaul/Dropbox/R works/Projects/positive-words.txt',what='character',comment.char = ',')
+  neg.words=scan('/Users/soumyapaul/Dropbox/R works/Projects/negative-words.txt',what='character',comment.char = ',')
+  Olympicscore=score.sentiment(Olympics_Tokyo_tweets$text,pos.words,neg.words,.progress = 'text')
+
+  ggplot(NULL,aes(x=Olympicscore$score))+geom_histogram(binwidth=1,col="darkblue",fill="lightblue")+scale_x_continuous(breaks = seq(-3,3,1),labels=c("Worst","Worse","Bad","Neutral","Good","Better","Best"))+ggtitle("Sentiment of people in Olympic")+xlab("Sentiment")+ylab("Number of people")
+ 
+  
+
+```
+
